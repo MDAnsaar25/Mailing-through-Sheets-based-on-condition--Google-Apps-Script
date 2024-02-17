@@ -1,0 +1,72 @@
+//main function - Ansaar's Reference
+function checkAndSendEmails() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Demo/Paid YAR FEB'); // replace 'Sheet1' with your sheet's name
+  var data = sheet.getDataRange().getValues();
+  
+  for (var i = 90; i < data.length; i++) { // start from 90th to skip the header row
+    var row = data[i];
+    if (!row || row.length < 20) { // This row is undefined or doesn't have enough columns, so skip it
+      continue;
+    }
+    var category = row[0]; // column A
+    var statusS = row[18]; // column S (warning status)
+    var statusT = row[19]; // column T (penalty status)
+
+    if ((category === 'penalty automated' || category === 'warning' || category === 'Warning') && statusS !== 'Immediate Attention mail sent') {
+      sendImmediateAttentionEmail(row);
+      sheet.getRange(i + 1, 19).setValue('Immediate Attention mail sent'); // update status in column S
+    } else if ((category === 'penalty applied' || category === 'Penalty applied') && statusT !== 'Penalty mail sent') {
+      sendPenaltyEmail(row);
+      sheet.getRange(i + 1, 20).setValue('Penalty mail sent'); // update status in column T
+    }
+  }
+}
+
+//Immediate Attention Mail
+function sendImmediateAttentionEmail(row) {
+  if (!row || row.length < 16) { // This row is undefined or doesn't have enough columns, so skip it
+    return;
+  }
+  var classDate = Utilities.formatDate(new Date(row[3]), Session.getScriptTimeZone(), 'EEE MMM dd yyyy'); // column D
+  var issue = row[15]; // column P
+  var teacherEmail = row[6]; // column G
+  var teamLeadEmail = row[7]; // column H
+  var studentId = row[11]; // column L
+  var classType = row[13]; // column N
+  var studentIdLine = studentId ? '<p style="color:black;"><b>Student ID: ' + studentId + '.</b></p>\n' : '';
+  var staticEmail = 'rasheedakesury@brightchamps.com'; // static email address
+  var emailSubject = row[1]; // column B
+  var emailBody = '<p style="color:black;">Dear Educator,</p>\n\n<p style="color:black;">In the dynamic world of education, we often encounter unique challenges that also present opportunities for growth and transformation.</p>\n\n<p style="color:black;">We recently noticed a breach of YAR guidelines, specifically concerning your recent class. This incident has underscored a performance gap that needs to be addressed.</p>\n\n<p style="color:black;"><b>Class Date: ' + classDate + '</b></p>\n<p style="color:black;"><b>Class Type: ' + classType + '</b></p>\n' + studentIdLine + '<p style="color:black;"><b>Issue: ' + issue + '.</b></p>\n\n<p style="color:black;">We kindly urge you to ensure that every student who attends your classes leaves with a renewed enthusiasm for their learning journey. As an educator, your role is crucial in inspiring and creating a positive and impactful educational experience for our students.</p>\n\n<p style="color:black;">We encourage you to take immediate and consistent action, with an emphasis on punctuality and a focused approach to deliver your best in every class.</p>\n\n<p style="color:red;"><b>Please adhere to all protocols, as any lapses or repeated violations may lead to corrective action, including the potential blocking of demos based on performance.</b></p>\n\n<p style="color:black;">We request you to acknowledge the receipt of this email and provide any necessary clarification and proof via the same email within the next 24 hours.</p>\n\n<p style="color:black;">Thank you for your attention to this matter.</p>\n\n<p style="color:black;"><b>Thanks and Regards,<br>Academy Ops</b></p>';
+  
+  MailApp.sendEmail({
+    to: teacherEmail,
+    cc: teamLeadEmail + ',' + staticEmail,
+    subject: emailSubject,
+    htmlBody: emailBody
+  });
+}
+
+// Penalty Mail
+function sendPenaltyEmail(row) {
+  if (!row || row.length < 16) { // This row is undefined or doesn't have enough columns, so skip it
+    return;
+  }
+  var classDate = Utilities.formatDate(new Date(row[3]), Session.getScriptTimeZone(), 'EEE MMM dd yyyy'); // column D
+  var issue = row[15]; // column P
+  var teacherEmail = row[6]; // column G
+  var teamLeadEmail = row[7]; // column H
+  var penaltyAmount = row[2]; // column C
+  var studentId = row[11]; // column L
+  var classType = row[13]; // column N
+  var studentIdLine = studentId ? '<p style="color:black;"><b>Student ID: ' + studentId + '.</b></p>\n' : '';
+  var staticEmail = 'rasheedakesury@brightchamps.com'; //  static email address
+  var emailSubject = row[1]; // column B
+  var emailBody = '<p style="color:black;">Dear Teacher,</p>\n\n<p style="color:black;">In the ever-evolving landscape of education, we find ourselves presented with unique challenges that also serve as opportunities for growth and transformation.</p>\n\n<p style="color:black;">Recently, it has come to our attention that there has been a breach of YAR guidelines specifically concerning your recent class. This breach has highlighted a gap in performance and a penalty of Rs ' + penaltyAmount + '</p>\n\n<p style="color:black;"><b>Class Date: ' + classDate + '</b></p>\n<p style="color:black;"><b>Class Type: ' + classType + '</b></p>\n' + studentIdLine + '<p style="color:black;"><b>Issue: ' + issue + '.</b></p>\n\n<p style="color:black;">We kindly request your utmost attention and dedication to ensure that every student who attends your classes leaves with a genuine excitement for their learning journey. Your role as an educator is paramount in inspiring and fostering a positive and impactful educational experience for our students.</p>\n\n<p style="color:black;">We urge you to take immediate and consistent action, emphasizing punctuality and maintaining a focused approach in delivering your best during every class.</p>\n\n<p style="color:red;"><b>Please adhere to all protocols, as any lapses or repeated violations may result in corrective action, including the blocking of demos based on performance.</b></p>\n\n<p style="color:black;">Kindly acknowledge the receipt of this email and provide clarification and all necessary proof via the same email within the next 24 hours.</p>\n\n<p style="color:black;">Thank you for your attention to this matter.</p>\n\n<p style="color:black;"><b>Thanks and Regards,<br>Academy Ops</b></p>';
+  
+  MailApp.sendEmail({
+    to: teacherEmail,
+    cc: teamLeadEmail + ',' + staticEmail,
+    subject: emailSubject,
+    htmlBody: emailBody
+  });
+}
